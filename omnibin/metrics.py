@@ -11,6 +11,9 @@ from sklearn.calibration import calibration_curve
 from matplotlib.backends.backend_pdf import PdfPages
 
 def generate_binary_classification_report(y_true, y_scores, output_path="omnibin_report.pdf", n_bootstrap=1000):
+    # Set default DPI for all figures
+    plt.rcParams['figure.dpi'] = 300
+    
     thresholds = np.linspace(0, 1, 100)
     metrics_by_threshold = []
 
@@ -71,7 +74,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
 
     with PdfPages(output_path) as pdf:
         # ROC and PR Curves
-        plt.figure(figsize=(12, 5))
+        plt.figure(figsize=(12, 5), dpi=300)
         plt.subplot(1, 2, 1)
         fpr, tpr, _ = roc_curve(y_true, y_scores)
         plt.plot(fpr, tpr, label="ROC curve")
@@ -90,32 +93,32 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel("Precision")
         plt.title("Precision-Recall Curve")
         plt.legend()
-        pdf.savefig()
+        pdf.savefig(dpi=300)
         plt.close()
 
         # Metrics vs Threshold
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(10, 6), dpi=300)
         for col in metrics_df.columns[1:]:
             plt.plot(metrics_df["Threshold"], metrics_df[col], label=col)
         plt.xlabel("Threshold")
         plt.ylabel("Metric Value")
         plt.title("Metrics Across Thresholds")
         plt.legend()
-        pdf.savefig()
+        pdf.savefig(dpi=300)
         plt.close()
 
         # Confusion Matrix
         cm = confusion_matrix(y_true, y_pred_opt)
-        plt.figure(figsize=(5, 4))
+        plt.figure(figsize=(5, 4), dpi=300)
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
         plt.title("Confusion Matrix (Optimal Threshold)")
         plt.xlabel("Predicted Label")
         plt.ylabel("True Label")
-        pdf.savefig()
+        pdf.savefig(dpi=300)
         plt.close()
 
         # Calibration Plot
-        plt.figure(figsize=(6, 6))
+        plt.figure(figsize=(6, 6), dpi=300)
         prob_true, prob_pred = calibration_curve(y_true, y_scores, n_bins=10, strategy='uniform')
         plt.plot(prob_pred, prob_true, marker='o', label='Calibration curve')
         plt.plot([0, 1], [0, 1], linestyle='--', color='gray')
@@ -123,11 +126,11 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel('True Probability')
         plt.title('Calibration Plot')
         plt.legend()
-        pdf.savefig()
+        pdf.savefig(dpi=300)
         plt.close()
 
         # Metrics Summary Table
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(8, 6), dpi=300)
         ax.axis("off")
         table_data = [
             [k, f"{v:.3f}", f"[{conf_intervals[k][0]:.3f}, {conf_intervals[k][1]:.3f}]"]
@@ -138,7 +141,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         table.set_fontsize(10)
         table.scale(1.2, 1.2)
         ax.set_title("Performance Metrics at Optimal Threshold", fontweight="bold")
-        pdf.savefig()
+        pdf.savefig(dpi=300)
         plt.close()
 
     return output_path
