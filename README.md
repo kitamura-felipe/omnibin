@@ -2,9 +2,9 @@
 
 A Python package for generating comprehensive binary classification reports with visualizations and confidence intervals.
 
-## Test here:
+## Try it Online
 
-<iframe src="https://felipekitamura-omnibin.hf.space" frameborder="0" width="850" height="450"></iframe>
+You can try Omnibin directly in your browser through our [Hugging Face Space](https://felipekitamura-omnibin.hf.space).
 
 ## Installation
 
