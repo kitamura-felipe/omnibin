@@ -12,7 +12,7 @@ from sklearn.metrics import (
 from sklearn.calibration import calibration_curve
 from matplotlib.backends.backend_pdf import PdfPages
 
-def generate_binary_classification_report(y_true, y_scores, output_path="omnibin_report.pdf", n_bootstrap=1000, random_seed=42):
+def generate_binary_classification_report(y_true, y_scores, output_path="omnibin_report.pdf", n_bootstrap=1000, random_seed=42, dpi=300):
     # Set random seed for reproducibility
     if random_seed is not None:
         np.random.seed(random_seed)
@@ -22,8 +22,8 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
     
-    # Set default DPI for all figures
-    plt.rcParams['figure.dpi'] = 300
+    # Set DPI for all figures
+    plt.rcParams['figure.dpi'] = dpi
     
     thresholds = np.linspace(0, 1, 100)
     metrics_by_threshold = []
@@ -129,7 +129,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
 
     with PdfPages(output_path) as pdf:
         # ROC and PR Curves with proper confidence intervals
-        plt.figure(figsize=(12, 5), dpi=300)
+        plt.figure(figsize=(12, 5), dpi=dpi)
         
         # Calculate confidence intervals for curves
         tpr_ci, precision_ci, common_fpr, common_recall = bootstrap_curves(y_true, y_scores, n_boot=n_bootstrap)
@@ -152,35 +152,35 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel("Precision")
         plt.title("Precision-Recall Curve")
         plt.legend()
-        plt.savefig(os.path.join(plots_dir, "roc_pr.png"), dpi=300, bbox_inches='tight')
-        pdf.savefig(dpi=300)
+        plt.savefig(os.path.join(plots_dir, "roc_pr.png"), dpi=dpi, bbox_inches='tight')
+        pdf.savefig(dpi=dpi)
         plt.close()
 
         # Metrics vs Threshold
-        plt.figure(figsize=(10, 6), dpi=300)
+        plt.figure(figsize=(10, 6), dpi=dpi)
         for col in metrics_df.columns[1:]:
             plt.plot(metrics_df["Threshold"], metrics_df[col], label=col)
         plt.xlabel("Threshold")
         plt.ylabel("Metric Value")
         plt.title("Metrics Across Thresholds")
         plt.legend()
-        plt.savefig(os.path.join(plots_dir, "metrics_threshold.png"), dpi=300, bbox_inches='tight')
-        pdf.savefig(dpi=300)
+        plt.savefig(os.path.join(plots_dir, "metrics_threshold.png"), dpi=dpi, bbox_inches='tight')
+        pdf.savefig(dpi=dpi)
         plt.close()
 
         # Confusion Matrix
         cm = confusion_matrix(y_true, y_pred_opt)
-        plt.figure(figsize=(5, 4), dpi=300)
+        plt.figure(figsize=(5, 4), dpi=dpi)
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
         plt.title("Confusion Matrix (Optimal Threshold)")
         plt.xlabel("Predicted Label")
         plt.ylabel("True Label")
-        plt.savefig(os.path.join(plots_dir, "confusion_matrix.png"), dpi=300, bbox_inches='tight')
-        pdf.savefig(dpi=300)
+        plt.savefig(os.path.join(plots_dir, "confusion_matrix.png"), dpi=dpi, bbox_inches='tight')
+        pdf.savefig(dpi=dpi)
         plt.close()
 
         # Calibration Plot
-        plt.figure(figsize=(6, 6), dpi=300)
+        plt.figure(figsize=(6, 6), dpi=dpi)
         prob_true, prob_pred = calibration_curve(y_true, y_scores, n_bins=10, strategy='uniform')
         plt.plot(prob_pred, prob_true, marker='o', label='Calibration curve')
         plt.plot([0, 1], [0, 1], linestyle='--', color='gray')
@@ -188,12 +188,12 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel('True Probability')
         plt.title('Calibration Plot')
         plt.legend()
-        plt.savefig(os.path.join(plots_dir, "calibration.png"), dpi=300, bbox_inches='tight')
-        pdf.savefig(dpi=300)
+        plt.savefig(os.path.join(plots_dir, "calibration.png"), dpi=dpi, bbox_inches='tight')
+        pdf.savefig(dpi=dpi)
         plt.close()
 
         # Metrics Summary Table
-        fig, ax = plt.subplots(figsize=(8, 6), dpi=300)
+        fig, ax = plt.subplots(figsize=(8, 6), dpi=dpi)
         ax.axis("off")
         table_data = [
             [k, f"{v:.3f}", f"[{conf_intervals[k][0]:.3f}, {conf_intervals[k][1]:.3f}]"]
@@ -204,12 +204,12 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         table.set_fontsize(10)
         table.scale(1.2, 1.2)
         ax.set_title("Performance Metrics at Optimal Threshold", fontweight="bold")
-        plt.savefig(os.path.join(plots_dir, "metrics_summary.png"), dpi=300, bbox_inches='tight')
-        pdf.savefig(dpi=300)
+        plt.savefig(os.path.join(plots_dir, "metrics_summary.png"), dpi=dpi, bbox_inches='tight')
+        pdf.savefig(dpi=dpi)
         plt.close()
 
         # Prediction Distribution Histogram
-        plt.figure(figsize=(10, 6), dpi=300)
+        plt.figure(figsize=(10, 6), dpi=dpi)
         plt.hist(y_scores[y_true == 1], bins=50, alpha=0.5, label='Positive Class', color='blue')
         plt.hist(y_scores[y_true == 0], bins=50, alpha=0.5, label='Negative Class', color='red')
         plt.axvline(x=best_thresh, color='black', linestyle='--', label=f'Optimal Threshold ({best_thresh:.3f})')
@@ -217,8 +217,8 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel('Count')
         plt.title('Distribution of Predictions')
         plt.legend()
-        plt.savefig(os.path.join(plots_dir, "prediction_distribution.png"), dpi=300, bbox_inches='tight')
-        pdf.savefig(dpi=300)
+        plt.savefig(os.path.join(plots_dir, "prediction_distribution.png"), dpi=dpi, bbox_inches='tight')
+        pdf.savefig(dpi=dpi)
         plt.close()
 
     return output_path
