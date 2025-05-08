@@ -15,7 +15,7 @@ import pandas as pd
 from omnibin import generate_binary_classification_report
 
 # Load your data
-data = pd.read_csv("scores.csv")
+data = pd.read_csv("data/scores.csv")
 y_true = data['y_true'].values
 y_scores = data['y_pred'].values
 
