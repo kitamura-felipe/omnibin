@@ -43,8 +43,6 @@ build/
 htmlcov/
 
 # Results and data
-results/
-*.csv
 *.xlsx
 *.xls
 *.db
