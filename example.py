@@ -19,7 +19,8 @@ report_path = generate_binary_classification_report(
     y_true=y_true,
     y_scores=y_scores,
     output_path=os.path.join(RESULTS_DIR, "classification_report.pdf"),
-    n_bootstrap=1000
+    n_bootstrap=1000,
+    random_seed=42  # Set a fixed random seed for reproducibility
 )
 
 print(f"Report generated and saved to: {report_path}")

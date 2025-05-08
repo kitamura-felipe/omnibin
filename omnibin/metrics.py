@@ -12,7 +12,11 @@ from sklearn.metrics import (
 from sklearn.calibration import calibration_curve
 from matplotlib.backends.backend_pdf import PdfPages
 
-def generate_binary_classification_report(y_true, y_scores, output_path="omnibin_report.pdf", n_bootstrap=1000):
+def generate_binary_classification_report(y_true, y_scores, output_path="omnibin_report.pdf", n_bootstrap=1000, random_seed=42):
+    # Set random seed for reproducibility
+    if random_seed is not None:
+        np.random.seed(random_seed)
+    
     # Ensure output directory exists
     output_dir = os.path.dirname(output_path)
     if output_dir:
