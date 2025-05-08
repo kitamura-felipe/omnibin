@@ -5,7 +5,7 @@ A Python package for generating comprehensive binary classification reports with
 ## Installation
 
 ```bash
-pip install omnibin
+git clone https://github.com/kitamura-felipe/omnibin.git
 ```
 
 ## Usage
