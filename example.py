@@ -3,7 +3,21 @@ import numpy as np
 import os
 from omnibin import generate_binary_classification_report
 
-data = pd.DataFrame({'y_true': (y:=np.random.choice([0,1],1000,p:=[.9,.1])),'y_pred': np.where(y, np.random.beta(4,1.5,1000)*.8+.1, np.random.beta(1.5,4,1000)*.8+.1)})
+# Define paths
+RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
+
+# Ensure results directory exists
+os.makedirs(RESULTS_DIR, exist_ok=True)
+
+# Generate random data
+data = pd.DataFrame({
+    'y_true': (y:=np.random.choice([0,1],1000,p:=[.9,.1])),
+    'y_pred': np.where(
+        y,
+        np.random.beta(3,1.5,1000)*.9+.1,  # Positive cases: less skewed towards 1.0
+        np.random.beta(1.5,3,1000)*.9+.1   # Negative cases: less skewed towards 0.1
+    )
+})
 
 y_true = data['y_true'].values
 y_scores = data['y_pred'].values
