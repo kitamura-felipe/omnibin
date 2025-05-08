@@ -2,6 +2,15 @@
 
 A Python package for generating comprehensive binary classification reports with visualizations and confidence intervals.
 
+## Test here:
+
+<iframe
+    src="https://felipekitamura-omnibin.hf.space"
+    frameborder="0"
+    width="850"
+    height="450"
+></iframe>
+
 ## Installation
 
 ```bash
