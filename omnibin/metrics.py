@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tqdm import tqdm
+import os
 from sklearn.metrics import (
     accuracy_score, recall_score, precision_score, f1_score, roc_auc_score,
     average_precision_score, confusion_matrix, matthews_corrcoef, roc_curve,
@@ -11,13 +13,20 @@ from sklearn.calibration import calibration_curve
 from matplotlib.backends.backend_pdf import PdfPages
 
 def generate_binary_classification_report(y_true, y_scores, output_path="omnibin_report.pdf", n_bootstrap=1000):
+    # Create results directory if it doesn't exist
+    results_dir = "results"
+    os.makedirs(results_dir, exist_ok=True)
+    
+    # Update output path to be in results directory
+    output_path = os.path.join(results_dir, os.path.basename(output_path))
+    
     # Set default DPI for all figures
     plt.rcParams['figure.dpi'] = 300
     
     thresholds = np.linspace(0, 1, 100)
     metrics_by_threshold = []
 
-    for t in thresholds:
+    for t in tqdm(thresholds, desc="Calculating metrics across thresholds"):
         y_pred = (y_scores >= t).astype(int)
         acc = accuracy_score(y_true, y_pred)
         sens = recall_score(y_true, y_pred)
@@ -34,7 +43,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
 
     def bootstrap_metric(metric_func, y_true, y_scores, n_boot=1000):
         stats = []
-        for _ in range(n_boot):
+        for _ in tqdm(range(n_boot), desc="Bootstrap iterations", leave=False):
             indices = np.random.choice(range(len(y_true)), len(y_true), replace=True)
             try:
                 stats.append(metric_func(y_true[indices], y_scores[indices]))
@@ -93,6 +102,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel("Precision")
         plt.title("Precision-Recall Curve")
         plt.legend()
+        plt.savefig(os.path.join(results_dir, "high_res_roc_pr.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
@@ -104,6 +114,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel("Metric Value")
         plt.title("Metrics Across Thresholds")
         plt.legend()
+        plt.savefig(os.path.join(results_dir, "high_res_metrics_threshold.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
@@ -114,6 +125,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.title("Confusion Matrix (Optimal Threshold)")
         plt.xlabel("Predicted Label")
         plt.ylabel("True Label")
+        plt.savefig(os.path.join(results_dir, "high_res_confusion_matrix.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
@@ -126,6 +138,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel('True Probability')
         plt.title('Calibration Plot')
         plt.legend()
+        plt.savefig(os.path.join(results_dir, "high_res_calibration.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
@@ -141,6 +154,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         table.set_fontsize(10)
         table.scale(1.2, 1.2)
         ax.set_title("Performance Metrics at Optimal Threshold", fontweight="bold")
+        plt.savefig(os.path.join(results_dir, "high_res_metrics_summary.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
