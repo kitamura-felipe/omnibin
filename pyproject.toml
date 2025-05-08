@@ -7,7 +7,7 @@ name = "omnibin"
 version = "0.1.0"
 description = "A package for generating comprehensive binary classification reports with visualizations and confidence intervals"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.11"
 license = "MIT"
 authors = [
     { name = "Felipe Campos Kitamura", email = "kitamura.felipe@gmail.com" }
