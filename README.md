@@ -32,7 +32,7 @@ report_path = generate_binary_classification_report(
 
 The input data should be provided as:
 - `y_true`: Array of true binary labels (0 or 1)
-- `y_scores`: Array of predicted probabilities or scores
+- `y_pred`: Array of predicted probabilities or scores
 
 ## Features
 
