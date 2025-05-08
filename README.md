@@ -16,8 +16,8 @@ from omnibin import generate_binary_classification_report
 
 # Load your data
 data = pd.read_csv("scores.csv")
-y_true = data['true_labels'].values
-y_scores = data['predicted_scores'].values
+y_true = data['y_true'].values
+y_scores = data['y_pred'].values
 
 # Generate comprehensive classification report
 report_path = generate_binary_classification_report(
