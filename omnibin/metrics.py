@@ -13,12 +13,10 @@ from sklearn.calibration import calibration_curve
 from matplotlib.backends.backend_pdf import PdfPages
 
 def generate_binary_classification_report(y_true, y_scores, output_path="omnibin_report.pdf", n_bootstrap=1000):
-    # Create results directory if it doesn't exist
-    results_dir = "results"
-    os.makedirs(results_dir, exist_ok=True)
-    
-    # Update output path to be in results directory
-    output_path = os.path.join(results_dir, os.path.basename(output_path))
+    # Ensure output directory exists
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
     
     # Set default DPI for all figures
     plt.rcParams['figure.dpi'] = 300
@@ -81,6 +79,10 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         ci = bootstrap_metric(func, y_true, y_scores, n_boot=n_bootstrap)
         conf_intervals[name] = ci
 
+    # Create output directory for individual plots
+    plots_dir = os.path.join(output_dir, "plots")
+    os.makedirs(plots_dir, exist_ok=True)
+
     with PdfPages(output_path) as pdf:
         # ROC and PR Curves
         plt.figure(figsize=(12, 5), dpi=300)
@@ -102,7 +104,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel("Precision")
         plt.title("Precision-Recall Curve")
         plt.legend()
-        plt.savefig(os.path.join(results_dir, "high_res_roc_pr.png"), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(plots_dir, "roc_pr.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
@@ -114,7 +116,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel("Metric Value")
         plt.title("Metrics Across Thresholds")
         plt.legend()
-        plt.savefig(os.path.join(results_dir, "high_res_metrics_threshold.png"), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(plots_dir, "metrics_threshold.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
@@ -125,7 +127,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.title("Confusion Matrix (Optimal Threshold)")
         plt.xlabel("Predicted Label")
         plt.ylabel("True Label")
-        plt.savefig(os.path.join(results_dir, "high_res_confusion_matrix.png"), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(plots_dir, "confusion_matrix.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
@@ -138,7 +140,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel('True Probability')
         plt.title('Calibration Plot')
         plt.legend()
-        plt.savefig(os.path.join(results_dir, "high_res_calibration.png"), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(plots_dir, "calibration.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
@@ -154,7 +156,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         table.set_fontsize(10)
         table.scale(1.2, 1.2)
         ax.set_title("Performance Metrics at Optimal Threshold", fontweight="bold")
-        plt.savefig(os.path.join(results_dir, "high_res_metrics_summary.png"), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(plots_dir, "metrics_summary.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
@@ -167,7 +169,7 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         plt.ylabel('Count')
         plt.title('Distribution of Predictions')
         plt.legend()
-        plt.savefig(os.path.join(results_dir, "high_res_prediction_distribution.png"), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(plots_dir, "prediction_distribution.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
