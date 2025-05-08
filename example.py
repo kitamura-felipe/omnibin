@@ -1,16 +1,10 @@
 import pandas as pd
+import numpy as np
 import os
 from omnibin import generate_binary_classification_report
 
-# Define paths
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
+data = pd.DataFrame({'y_true': (y:=np.random.choice([0,1],1000,p:=[.9,.1])),'y_pred': np.where(y, np.random.beta(4,1.5,1000)*.8+.1, np.random.beta(1.5,4,1000)*.8+.1)})
 
-# Ensure results directory exists
-os.makedirs(RESULTS_DIR, exist_ok=True)
-
-# Load your data
-data = pd.read_csv(os.path.join(DATA_DIR, "scores.csv"))
 y_true = data['y_true'].values
 y_scores = data['y_pred'].values
 
