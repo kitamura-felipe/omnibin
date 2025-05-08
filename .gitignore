@@ -37,6 +37,7 @@ ENV/
 # Distribution
 dist/
 build/
+update.bat
 
 # Coverage
 .coverage

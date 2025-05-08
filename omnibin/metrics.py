@@ -49,6 +49,46 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
                 continue
         return np.percentile(stats, [2.5, 97.5])
 
+    def bootstrap_curves(y_true, y_scores, n_boot=1000):
+        tprs = []
+        fprs = []
+        precisions = []
+        recalls = []
+        
+        # Get the base curves to determine common points
+        base_fpr, base_tpr, _ = roc_curve(y_true, y_scores)
+        base_precision, base_recall, _ = precision_recall_curve(y_true, y_scores)
+        
+        # Create common x-axis points
+        common_fpr = np.linspace(0, 1, 100)
+        common_recall = np.linspace(0, 1, 100)
+        
+        for _ in tqdm(range(n_boot), desc="Bootstrap iterations for curves", leave=False):
+            indices = np.random.choice(range(len(y_true)), len(y_true), replace=True)
+            try:
+                # ROC curve
+                fpr, tpr, _ = roc_curve(y_true[indices], y_scores[indices])
+                tpr_interp = np.interp(common_fpr, fpr, tpr)
+                tprs.append(tpr_interp)
+                
+                # PR curve - handle precision interpolation carefully
+                precision, recall, _ = precision_recall_curve(y_true[indices], y_scores[indices])
+                # Sort by recall to ensure proper interpolation
+                sort_idx = np.argsort(recall)
+                recall = recall[sort_idx]
+                precision = precision[sort_idx]
+                # Interpolate precision values
+                precision_interp = np.interp(common_recall, recall, precision)
+                precisions.append(precision_interp)
+            except:
+                continue
+        
+        # Calculate confidence intervals
+        tpr_ci = np.percentile(tprs, [2.5, 97.5], axis=0)
+        precision_ci = np.percentile(precisions, [2.5, 97.5], axis=0)
+        
+        return tpr_ci, precision_ci, common_fpr, common_recall
+
     fpr, tpr, roc_thresholds = roc_curve(y_true, y_scores)
     j_scores = tpr - fpr
     best_thresh = roc_thresholds[np.argmax(j_scores)]
@@ -84,12 +124,16 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
     os.makedirs(plots_dir, exist_ok=True)
 
     with PdfPages(output_path) as pdf:
-        # ROC and PR Curves
+        # ROC and PR Curves with proper confidence intervals
         plt.figure(figsize=(12, 5), dpi=300)
+        
+        # Calculate confidence intervals for curves
+        tpr_ci, precision_ci, common_fpr, common_recall = bootstrap_curves(y_true, y_scores, n_boot=n_bootstrap)
+        
         plt.subplot(1, 2, 1)
         fpr, tpr, _ = roc_curve(y_true, y_scores)
         plt.plot(fpr, tpr, label="ROC curve")
-        plt.fill_between(fpr, np.maximum(0, tpr - 0.05), np.minimum(1, tpr + 0.05), alpha=0.3)
+        plt.fill_between(common_fpr, tpr_ci[0], tpr_ci[1], alpha=0.3)
         plt.plot([0, 1], [0, 1], "k--")
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
@@ -98,8 +142,8 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
 
         plt.subplot(1, 2, 2)
         precision, recall, _ = precision_recall_curve(y_true, y_scores)
-        plt.plot(recall[1:], precision[1:], label="PR curve")
-        plt.fill_between(recall[1:], np.maximum(0, precision[1:] - 0.05), np.minimum(1, precision[1:] + 0.05), alpha=0.3)
+        plt.plot(recall, precision, label="PR curve")
+        plt.fill_between(common_recall, precision_ci[0], precision_ci[1], alpha=0.3)
         plt.xlabel("Recall")
         plt.ylabel("Precision")
         plt.title("Precision-Recall Curve")
