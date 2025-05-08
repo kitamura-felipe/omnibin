@@ -96,8 +96,8 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
 
         plt.subplot(1, 2, 2)
         precision, recall, _ = precision_recall_curve(y_true, y_scores)
-        plt.plot(recall, precision, label="PR curve")
-        plt.fill_between(recall, np.maximum(0, precision - 0.05), np.minimum(1, precision + 0.05), alpha=0.3)
+        plt.plot(recall[1:], precision[1:], label="PR curve")
+        plt.fill_between(recall[1:], np.maximum(0, precision[1:] - 0.05), np.minimum(1, precision[1:] + 0.05), alpha=0.3)
         plt.xlabel("Recall")
         plt.ylabel("Precision")
         plt.title("Precision-Recall Curve")
@@ -155,6 +155,19 @@ def generate_binary_classification_report(y_true, y_scores, output_path="omnibin
         table.scale(1.2, 1.2)
         ax.set_title("Performance Metrics at Optimal Threshold", fontweight="bold")
         plt.savefig(os.path.join(results_dir, "high_res_metrics_summary.png"), dpi=300, bbox_inches='tight')
+        pdf.savefig(dpi=300)
+        plt.close()
+
+        # Prediction Distribution Histogram
+        plt.figure(figsize=(10, 6), dpi=300)
+        plt.hist(y_scores[y_true == 1], bins=50, alpha=0.5, label='Positive Class', color='blue')
+        plt.hist(y_scores[y_true == 0], bins=50, alpha=0.5, label='Negative Class', color='red')
+        plt.axvline(x=best_thresh, color='black', linestyle='--', label=f'Optimal Threshold ({best_thresh:.3f})')
+        plt.xlabel('Predicted Probability')
+        plt.ylabel('Count')
+        plt.title('Distribution of Predictions')
+        plt.legend()
+        plt.savefig(os.path.join(results_dir, "high_res_prediction_distribution.png"), dpi=300, bbox_inches='tight')
         pdf.savefig(dpi=300)
         plt.close()
 
