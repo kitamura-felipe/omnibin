@@ -16,7 +16,7 @@ pip install omnibin
 
 ```python
 import pandas as pd
-from omnibin import generate_binary_classification_report
+from omnibin import generate_binary_classification_report, ColorScheme
 
 # Load your data
 data = pd.read_csv("data/scores.csv")
@@ -25,10 +25,13 @@ y_scores = data['y_pred'].values
 
 # Generate comprehensive classification report
 report_path = generate_binary_classification_report(
-    y_true=y_true,
-    y_scores=y_scores,
-    output_path="classification_report.pdf",
-    n_bootstrap=1000
+    y_true=y_true,                    # Array of true binary labels (0 or 1)
+    y_scores=y_scores,                # Array of predicted probabilities or scores
+    output_path="classification_report.pdf",  # Path to save the PDF report
+    n_bootstrap=1000,                 # Number of bootstrap iterations for confidence intervals
+    random_seed=42,                   # Random seed for reproducibility
+    dpi=300,                          # DPI for plot resolution
+    color_scheme=ColorScheme.DEFAULT  # Color scheme for plots (DEFAULT, MONOCHROME, or VIBRANT)
 )
 ```
 
