@@ -1,3 +1,5 @@
+[![CI/CD](https://github.com/felipekitamura/omnibin/actions/workflows/update-hf-space.yml/badge.svg)](https://github.com/felipekitamura/omnibin/actions/workflows/update-hf-space.yml)
+
 # Omnibin
 
 A Python package for generating comprehensive binary classification reports with visualizations and confidence intervals.
