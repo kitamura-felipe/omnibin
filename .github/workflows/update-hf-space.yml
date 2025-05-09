@@ -19,6 +19,22 @@ jobs:
           git config --global user.name "kitamura-felipe"
           git clone https://huggingface.co/spaces/felipekitamura/omnibin space
           rsync -av --exclude='.git' ./ space/
+
+          echo '---' > temp_readme.md
+          echo 'title: Omnibin' >> temp_readme.md
+          echo 'emoji: ⚡' >> temp_readme.md
+          echo 'colorFrom: pink' >> temp_readme.md
+          echo 'colorTo: yellow' >> temp_readme.md
+          echo 'sdk: gradio' >> temp_readme.md
+          echo 'sdk_version: 5.29.0' >> temp_readme.md
+          echo 'app_file: app.py' >> temp_readme.md
+          echo 'pinned: false' >> temp_readme.md
+          echo 'license: mit' >> temp_readme.md
+          echo 'short_description: A Python package for generating comprehensive binary classi' >> temp_readme.md
+          echo '---' >> temp_readme.md
+          echo '' >> temp_readme.md
+          cat README.md >> temp_readme.md
+          mv temp_readme.md space/README.md
           cd space
           git add .
           git commit -m "Automated update from GitHub" || echo "No changes"
