@@ -1,3 +1,16 @@
+---
+title: Omnibin
+emoji: ⚡
+colorFrom: pink
+colorTo: yellow
+sdk: gradio
+sdk_version: 5.29.0
+app_file: app.py
+pinned: false
+license: mit
+short_description: A Python package for generating comprehensive binary classification report.
+---
+
 # Omnibin
 
 A Python package for generating comprehensive binary classification reports with visualizations and confidence intervals.
