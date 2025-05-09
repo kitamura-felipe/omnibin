@@ -49,3 +49,4 @@ htmlcov/
 *.xls
 *.db
 *.sqlite3 
+plots/

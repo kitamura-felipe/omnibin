@@ -2,6 +2,8 @@ import unittest
 import os
 import pandas as pd
 import numpy as np
+import warnings
+from sklearn.exceptions import UndefinedMetricWarning
 from omnibin.metrics import generate_binary_classification_report
 
 class TestMetrics(unittest.TestCase):
@@ -109,12 +111,15 @@ class TestMetrics(unittest.TestCase):
         
         # Test with all negative labels
         output_path = os.path.join(self.test_output_dir, "all_negative.pdf")
-        generate_binary_classification_report(
-            y_true=np.zeros(100),
-            y_scores=np.random.random(100),
-            output_path=output_path,
-            n_bootstrap=100
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
+            generate_binary_classification_report(
+                y_true=np.zeros(100),
+                y_scores=np.random.random(100),
+                output_path=output_path,
+                n_bootstrap=100
+            )
         self.assertTrue(os.path.exists(output_path))
         os.remove(output_path)
         
@@ -134,7 +139,13 @@ class TestMetrics(unittest.TestCase):
         """Clean up test outputs"""
         if os.path.exists(cls.test_output_dir):
             for file in os.listdir(cls.test_output_dir):
-                os.remove(os.path.join(cls.test_output_dir, file))
+                file_path = os.path.join(cls.test_output_dir, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                elif os.path.isdir(file_path):
+                    for subfile in os.listdir(file_path):
+                        os.remove(os.path.join(file_path, subfile))
+                    os.rmdir(file_path)
             os.rmdir(cls.test_output_dir)
 
 if __name__ == '__main__':
