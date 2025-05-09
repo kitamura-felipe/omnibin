@@ -1,4 +1,6 @@
-[![CI/CD](https://github.com/kitamura-felipe/omnibin/actions/workflows/update-hf-space.yml/badge.svg)](https://github.com/kitamura-felipe/omnibin/actions/workflows/update-hf-space.yml)
+[![Tests](https://github.com/kitamura-felipe/omnibin/actions/workflows/test.yml/badge.svg)](https://github.com/kitamura-felipe/omnibin/actions/workflows/test.yml)
+[![Deploy](https://github.com/kitamura-felipe/omnibin/actions/workflows/deploy.yml/badge.svg)](https://github.com/kitamura-felipe/omnibin/actions/workflows/deploy.yml)
+
 
 # Omnibin
 
