@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibin"
-version = "0.1.5"
+version = "0.1.6"
 description = "A package for generating comprehensive binary classification reports with visualizations and confidence intervals"
 readme = "README.md"
 requires-python = ">=3.11"
