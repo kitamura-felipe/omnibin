@@ -1,4 +1,3 @@
-<!--
 ---
 title: Omnibin
 emoji: ⚡
@@ -11,7 +10,6 @@ pinned: false
 license: mit
 short_description: A Python package for generating comprehensive binary classi
 ---
--->
 
 # Omnibin
 
