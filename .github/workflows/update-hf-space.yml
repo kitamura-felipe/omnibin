@@ -1,0 +1,27 @@
+name: Deploy to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main  # or the branch you want to trigger deployment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v3
+
+      - name: Clone HF Space repo
+        run: |
+          git config --global user.email "kitamura.felipe@gmail.com"
+          git config --global user.name "kitamura-felipe"
+          git clone https://huggingface.co/spaces/felipekitamura/omnibin space
+          rsync -av --exclude='.git' ./ space/
+          cd space
+          git add .
+          git commit -m "Automated update from GitHub" || echo "No changes"
+          git push https://USER:$HF_TOKEN@huggingface.co/spaces/YOUR_USERNAME/YOUR_SPACE_NAME HEAD:main
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
