@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
-from omnibin import generate_binary_classification_report
+from omnibin import generate_binary_classification_report, ColorScheme
 
 # Define paths
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
@@ -29,7 +29,8 @@ report_path = generate_binary_classification_report(
     output_path=os.path.join(RESULTS_DIR, "classification_report.pdf"),
     n_bootstrap=1000,
     random_seed=42,  # Set a fixed random seed for reproducibility
-    dpi=72
+    dpi=72,
+    color_scheme=ColorScheme.DEFAULT
 )
 
 print(f"Report generated and saved to: {report_path}")
