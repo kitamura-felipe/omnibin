@@ -4,3 +4,6 @@ gradio
 matplotlib
 seaborn
 scikit-learn
+scipy
+tqdm
+pytest
