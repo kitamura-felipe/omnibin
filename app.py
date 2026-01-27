@@ -11,8 +11,9 @@ from omnibin import (
     generate_detection_report, DetectionColorScheme
 )
 
-# Define results directory
+# Define directories
 RESULTS_DIR = "/tmp/results"
+EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "data", "examples")
 
 # Map string color schemes to enum values
 CLASSIFICATION_COLOR_SCHEME_MAP = {
@@ -195,11 +196,18 @@ with gr.Blocks(title="Omnibin - ML Metrics Report Generator") as app:
 
             with gr.Row():
                 with gr.Column():
+                    gr.Markdown("**Download example file to try:**")
+                    gr.File(
+                        value=os.path.join(EXAMPLES_DIR, "classification_example.csv"),
+                        label="Example: classification_example.csv",
+                        interactive=False
+                    )
+                    gr.Markdown("---")
                     class_csv = gr.File(label="Upload CSV")
                     class_bootstrap = gr.Number(label="Bootstrap Iterations", value=1000, minimum=100, maximum=10000)
                     class_dpi = gr.Number(label="DPI", value=72, minimum=50, maximum=300)
                     class_color = gr.Dropdown(label="Color Scheme", choices=["DEFAULT", "MONOCHROME", "VIBRANT"], value="DEFAULT")
-                    class_btn = gr.Button("Generate Report")
+                    class_btn = gr.Button("Generate Report", variant="primary")
 
                 with gr.Column():
                     class_pdf = gr.File(label="Report PDF")
@@ -223,11 +231,18 @@ with gr.Blocks(title="Omnibin - ML Metrics Report Generator") as app:
 
             with gr.Row():
                 with gr.Column():
+                    gr.Markdown("**Download example file to try:**")
+                    gr.File(
+                        value=os.path.join(EXAMPLES_DIR, "regression_example.csv"),
+                        label="Example: regression_example.csv",
+                        interactive=False
+                    )
+                    gr.Markdown("---")
                     reg_csv = gr.File(label="Upload CSV")
                     reg_bootstrap = gr.Number(label="Bootstrap Iterations", value=1000, minimum=100, maximum=10000)
                     reg_dpi = gr.Number(label="DPI", value=72, minimum=50, maximum=300)
                     reg_color = gr.Dropdown(label="Color Scheme", choices=["DEFAULT", "MONOCHROME", "VIBRANT"], value="DEFAULT")
-                    reg_btn = gr.Button("Generate Report")
+                    reg_btn = gr.Button("Generate Report", variant="primary")
 
                 with gr.Column():
                     reg_pdf = gr.File(label="Report PDF")
@@ -251,12 +266,25 @@ with gr.Blocks(title="Omnibin - ML Metrics Report Generator") as app:
 
             with gr.Row():
                 with gr.Column():
+                    gr.Markdown("**Download example files to try:**")
+                    with gr.Row():
+                        gr.File(
+                            value=os.path.join(EXAMPLES_DIR, "segmentation_2d_ground_truth.npy"),
+                            label="Example: Ground Truth (2D)",
+                            interactive=False
+                        )
+                        gr.File(
+                            value=os.path.join(EXAMPLES_DIR, "segmentation_2d_prediction.npy"),
+                            label="Example: Prediction (2D)",
+                            interactive=False
+                        )
+                    gr.Markdown("---")
                     seg_gt = gr.File(label="Ground Truth Mask (.npy)")
                     seg_pred = gr.File(label="Prediction Mask (.npy)")
                     seg_bootstrap = gr.Number(label="Bootstrap Iterations", value=500, minimum=50, maximum=5000)
                     seg_dpi = gr.Number(label="DPI", value=72, minimum=50, maximum=300)
                     seg_color = gr.Dropdown(label="Color Scheme", choices=["DEFAULT", "MONOCHROME", "VIBRANT"], value="DEFAULT")
-                    seg_btn = gr.Button("Generate Report")
+                    seg_btn = gr.Button("Generate Report", variant="primary")
 
                 with gr.Column():
                     seg_pdf = gr.File(label="Report PDF")
@@ -280,13 +308,11 @@ with gr.Blocks(title="Omnibin - ML Metrics Report Generator") as app:
             ```json
             {
                 "predictions": [
-                    [{"box": [x1,y1,x2,y2], "score": 0.9}, ...],  // Image 1
-                    [{"box": [x1,y1,x2,y2], "score": 0.8}, ...],  // Image 2
+                    [{"box": [x1,y1,x2,y2], "score": 0.9}, ...],
                     ...
                 ],
                 "ground_truths": [
-                    [[x1,y1,x2,y2], [x1,y1,x2,y2], ...],  // Image 1
-                    [[x1,y1,x2,y2], ...],                  // Image 2
+                    [[x1,y1,x2,y2], ...],
                     ...
                 ]
             }
@@ -295,11 +321,18 @@ with gr.Blocks(title="Omnibin - ML Metrics Report Generator") as app:
 
             with gr.Row():
                 with gr.Column():
+                    gr.Markdown("**Download example file to try:**")
+                    gr.File(
+                        value=os.path.join(EXAMPLES_DIR, "detection_example.json"),
+                        label="Example: detection_example.json",
+                        interactive=False
+                    )
+                    gr.Markdown("---")
                     det_json = gr.File(label="Upload JSON")
                     det_bootstrap = gr.Number(label="Bootstrap Iterations", value=500, minimum=50, maximum=5000)
                     det_dpi = gr.Number(label="DPI", value=72, minimum=50, maximum=300)
                     det_color = gr.Dropdown(label="Color Scheme", choices=["DEFAULT", "MONOCHROME", "VIBRANT"], value="DEFAULT")
-                    det_btn = gr.Button("Generate Report")
+                    det_btn = gr.Button("Generate Report", variant="primary")
 
                 with gr.Column():
                     det_pdf = gr.File(label="Report PDF")
