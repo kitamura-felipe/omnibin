@@ -4,7 +4,7 @@
 
 # Omnibin
 
-A comprehensive Python package for generating detailed machine learning evaluation reports with visualizations, confidence intervals, and statistical analysis. Supports **binary classification**, **regression**, **segmentation**, and **object detection** tasks with a focus on healthcare applications.
+A comprehensive Python package for generating detailed machine learning evaluation reports with visualizations, confidence intervals, and statistical analysis. Supports **binary classification**, **regression**, **segmentation**, **object detection**, and **text generation (radiology reports)** tasks with a focus on healthcare applications.
 
 ## Try it Online
 
@@ -26,6 +26,7 @@ pip install omnibin
 | **Regression** | Continuous value prediction (e.g., tumor size, survival time) | MAE, RMSE, R², Bland-Altman analysis |
 | **Segmentation** | Medical image segmentation (tumors, organs) | Dice Score, IoU, Hausdorff Distance, Surface Distance |
 | **Detection** | Lesion/nodule detection | mAP, FROC Score, Precision-Recall at various IoU |
+| **Text Generation** | Radiology report generation | BLEU, ROUGE, METEOR, BERTScore, GREEN, RadFact, CRIMSON |
 
 ### Common Features
 
@@ -225,6 +226,94 @@ report_path = generate_lesion_detection_report(
 
 ---
 
+### Text Generation (Radiology Reports)
+
+Lexical metrics (BLEU, ROUGE, METEOR, BERTScore) plus three LLM-judge metrics
+wrapping their original reference implementations:
+
+| Metric | Original paper | Paper's judge model | Install |
+|--------|----------------|---------------------|---------|
+| **GREEN** | Ostmeier et al., EMNLP Findings 2024 | `StanfordAIMI/GREEN-RadLlama2-7b` (local GPU) | `pip install omnibin[green]` |
+| **RadFact** | Bannur et al., MAIRA-2, 2024 | Llama-3-70B-Instruct | `pip install omnibin[radfact]` |
+| **CRIMSON** | Baharoon et al., 2026 | `MedGemmaCRIMSON-4B` (local GPU) | `pip install omnibin[crimson]` |
+
+Each metric has two modes:
+
+- **Paper-default mode** — uses the upstream package verbatim (GREEN's
+  local Llama-2 fine-tune, RadFact's hydra pipeline, CRIMSON's MedGemma).
+  Requires the extras install; GREEN/CRIMSON need a GPU.
+- **API mode** — replays each paper's prompts against any of 5 providers
+  (**OpenAI, Anthropic, Google Gemini, OpenRouter, Groq**). GREEN uses its
+  verbatim prompt and parser unchanged (only the judge model swaps).
+  RadFact uses its verbatim two-stage system prompts but with zero-shot
+  JSON output instead of the upstream 10-shot YAML — logical P/R/F1 only,
+  no grounding / spatial. **Scores in API mode may differ from published
+  paper numbers**; reserved for screening / demo use. For exact paper
+  reproduction use the extras install.
+
+```python
+from omnibin import (
+    generate_text_generation_report,
+    TextGenColorScheme,
+    LLMConfig,
+)
+
+references = ["Findings: The lungs are clear...", ...]
+candidates = ["Findings: Heart size is normal...", ...]
+
+# Lexical only — no API keys needed
+report = generate_text_generation_report(
+    references, candidates,
+    output_path="text_generation_report.pdf",
+    metrics=["bleu", "rouge", "meteor", "bertscore"],
+    n_bootstrap=1000,
+    color_scheme=TextGenColorScheme.DEFAULT,
+)
+
+# API mode — GREEN + RadFact + CRIMSON via Anthropic Claude (no GPU needed)
+llm_config = LLMConfig(
+    provider="anthropic",
+    model="claude-sonnet-4-6",
+    # api_key read from $ANTHROPIC_API_KEY by default
+)
+report = generate_text_generation_report(
+    references, candidates,
+    metrics=["bleu", "rouge", "bertscore", "green", "radfact", "crimson"],
+    llm_config=llm_config,
+)
+print(report.aggregate_scores)
+print(report.submetrics)          # includes each paper's sub-scores
+print(report.confidence_intervals)
+```
+
+**Metrics Included:**
+- BLEU (sacrebleu, corpus + sentence)
+- ROUGE-1 / ROUGE-2 / ROUGE-L F
+- METEOR
+- BERTScore P / R / F1
+- GREEN (mean score, per-error-category breakdown) *— via `green-score`*
+- RadFact (logical / grounding / spatial precision & recall) *— via `radfact`*
+- CRIMSON (score, false findings, missing findings, attribute errors) *— via `crimson-score`*
+
+**Visualizations:**
+- Aggregate bar chart with 95% CI error bars
+- Per-sample violin / strip distribution
+- Pearson correlation heatmap between metrics
+- Per-pair × metric heatmap
+
+**Providers** (`LLMConfig.provider`): `"openai"`, `"anthropic"`, `"google"`,
+`"openrouter"`, `"groq"`. API keys are read from the provider's standard
+env var (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`,
+`OPENROUTER_API_KEY`, `GROQ_API_KEY`) unless passed explicitly.
+
+> **Note on the hosted Space**: GREEN and RadFact run in **API mode** with
+> a disclaimer shown to the user. The upstream packages are not installed
+> on the Space (GREEN needs GPU + pinned torch; RadFact pins pydantic 1.x).
+> For exact paper reproduction, use `pip install omnibin[green]`
+> (needs GPU) or `pip install omnibin[radfact]` (separate env from Gradio).
+
+---
+
 ## Color Schemes
 
 All report types support three color schemes:
@@ -245,6 +334,7 @@ All report types support three color schemes:
 | Regression | `y_true`: continuous array, `y_pred`: continuous array |
 | Segmentation | 2D or 3D NumPy arrays (binary masks) |
 | Detection | Lists of dicts with `box` and `score` keys |
+| Text Generation | Lists of reference/candidate report strings (or CSV with `reference`/`candidate` columns) |
 
 ---
 
@@ -272,7 +362,23 @@ All report types support three color schemes:
 ## Requirements
 
 - Python >= 3.11
-- NumPy, Pandas, Scikit-learn, Matplotlib, SciPy, Seaborn
+- Core: NumPy, Pandas, Scikit-learn, Matplotlib, SciPy, Seaborn
+- Optional extras:
+  - `omnibin[text]` → sacrebleu, rouge-score, nltk, bert-score
+  - `omnibin[llm-judge]` → litellm (provider router)
+  - `omnibin[green]` → green-score (Stanford-AIMI/GREEN, local GPU)
+  - `omnibin[crimson]` → crimson-score (rajpurkarlab/CRIMSON)
+  - `omnibin[radfact]` → radfact from git (microsoft/radfact — separate env)
+  - `omnibin[all-text]` → everything except radfact
+
+## Acknowledgments
+
+The text generation metrics wrap the original reference implementations of:
+- [Stanford-AIMI/GREEN](https://github.com/Stanford-AIMI/GREEN) — Ostmeier et al., "GREEN: Generative Radiology Report Evaluation and Error Notation", EMNLP Findings 2024
+- [microsoft/radfact](https://github.com/microsoft/radfact) — Bannur et al., "MAIRA-2: Grounded Radiology Report Generation", 2024
+- [rajpurkarlab/CRIMSON](https://github.com/rajpurkarlab/CRIMSON) — Baharoon et al., "CRIMSON: A Clinically-Grounded LLM-Based Metric for Generative Radiology Report Evaluation", 2026
+
+Please cite the original papers when using these metrics.
 
 ---
 

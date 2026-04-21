@@ -20,7 +20,15 @@ from .detection_metrics import (
 )
 from .detection_utils import DetectionColorScheme
 
-__version__ = "0.2.0"
+# Text Generation (BLEU, ROUGE, METEOR, BERTScore + GREEN, RadFact, CRIMSON)
+from .text_generation_metrics import (
+    generate_text_generation_report,
+    TextGenerationReport,
+)
+from .text_generation_utils import TextGenColorScheme
+from .llm_provider import LLMConfig, LLMProvider, SUPPORTED_PROVIDERS
+
+__version__ = "0.3.0"
 
 __all__ = [
     # Binary Classification
@@ -39,5 +47,13 @@ __all__ = [
     # Detection
     "generate_detection_report",
     "generate_lesion_detection_report",
-    "DetectionColorScheme"
+    "DetectionColorScheme",
+
+    # Text Generation
+    "generate_text_generation_report",
+    "TextGenerationReport",
+    "TextGenColorScheme",
+    "LLMConfig",
+    "LLMProvider",
+    "SUPPORTED_PROVIDERS",
 ]

@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-21
+
+### Added
+
+#### Text Generation Metrics (radiology reports)
+- `generate_text_generation_report()` for paired reference/candidate reports
+- `TextGenerationReport` dataclass with aggregate scores, per-sample scores,
+  submetrics, and bootstrap 95% CIs
+- Lexical metrics (all using each paper's original reference implementation):
+  - BLEU (sacrebleu — corpus and sentence-level)
+  - ROUGE-1 / ROUGE-2 / ROUGE-L (rouge-score)
+  - METEOR (nltk.translate.meteor_score)
+  - BERTScore P / R / F1 (bert-score)
+- LLM-judge metrics, each with two modes:
+  - **Paper-default mode** — wraps the original upstream package verbatim:
+    - **GREEN** (Ostmeier et al., 2024) — `pip install omnibin[green]`
+    - **RadFact** (Bannur et al., MAIRA-2, 2024) — `pip install omnibin[radfact]`
+    - **CRIMSON** (Baharoon et al., 2026) — `pip install omnibin[crimson]`
+  - **API mode** — replays each paper's pipeline with a swappable judge:
+    - GREEN API mode: verbatim prompt + parser (Apache-2.0, ported from
+      `green_score/utils.py` and `green_score/green.py`), only the model
+      call routes through litellm
+    - RadFact API mode: verbatim two-stage system messages (MIT, from
+      microsoft/RadFact) with zero-shot JSON output instead of 10-shot
+      YAML; logical P/R/F1 only, no spatial/grounding
+    - All three metrics now runnable via any of 5 providers (OpenAI,
+      Anthropic, Google, OpenRouter, Groq) with a disclaimer in the UI
+- `LLMConfig` + `LLMProvider` router supporting 5 providers:
+  OpenAI, Anthropic, Google (Gemini), OpenRouter, Groq (via litellm)
+- Per-paper default judge models surfaced in docstrings and Gradio UI
+- Visualizations:
+  - Aggregate bar chart with 95% CI error bars
+  - Per-sample violin / strip distribution
+  - Pearson correlation heatmap between metrics
+  - Per-pair × metric heatmap
+  - Submetric breakdown table
+- `TextGenColorScheme` enum (DEFAULT / MONOCHROME / VIBRANT)
+- 10 fabricated CXR report pairs added as example data (clearly marked
+  FABRICATED; covers paraphrase, laterality flip, severity mis-call,
+  hallucination, missed finding)
+- New Gradio tab with metric checkboxes, provider dropdown, API-key field
+- Tests covering input validation, report generation, bootstrap CI,
+  provider configuration, and color schemes (13 new tests)
+
+### Changed
+- Bumped version to 0.3.0
+- `pyproject.toml`: added `text`, `llm-judge`, `green`, `radfact`,
+  `crimson`, and `all-text` optional-dependency extras
+- `requirements.txt` (Gradio Space): added lexical metric deps, litellm,
+  and crimson-score (GREEN and RadFact deliberately omitted due to GPU
+  / pydantic-1.x-vs-Gradio-5 conflicts)
+
 ## [0.2.0] - 2025-01-27
 
 ### Added

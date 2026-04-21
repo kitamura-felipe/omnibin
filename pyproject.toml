@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibin"
-version = "0.2.0"
-description = "A comprehensive package for generating ML evaluation reports with visualizations and confidence intervals - supports classification, regression, segmentation, and detection with healthcare focus"
+version = "0.3.0"
+description = "A comprehensive package for generating ML evaluation reports with visualizations and confidence intervals - supports classification, regression, segmentation, detection, and text generation with healthcare focus"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -29,6 +29,41 @@ dependencies = [
     "scipy>=1.7.0",
     "seaborn>=0.11.0",
     "tqdm>=4.60.0",
+]
+
+[project.optional-dependencies]
+# Lexical text-generation metrics (BLEU / ROUGE / METEOR / BERTScore)
+text = [
+    "sacrebleu>=2.3.0",
+    "rouge-score>=0.1.2",
+    "nltk>=3.8.1",
+    "bert-score>=0.3.13",
+]
+# Unified LLM provider router for judge metrics (OpenAI / Anthropic / Google / OpenRouter / Groq)
+llm-judge = [
+    "litellm>=1.40.0",
+]
+# Stanford-AIMI GREEN — local HF model, GPU recommended
+green = [
+    "green-score>=0.0.12",
+]
+# microsoft/radfact — git install; conflicts with pydantic 2 / Gradio 5, install in a separate env
+radfact = [
+    "radfact @ git+https://github.com/microsoft/radfact.git",
+]
+# rajpurkarlab/CRIMSON
+crimson = [
+    "crimson-score>=0.2.0",
+]
+# Everything above except radfact (kept separate due to pydantic 1.x pin)
+all-text = [
+    "sacrebleu>=2.3.0",
+    "rouge-score>=0.1.2",
+    "nltk>=3.8.1",
+    "bert-score>=0.3.13",
+    "litellm>=1.40.0",
+    "green-score>=0.0.12",
+    "crimson-score>=0.2.0",
 ]
 
 [project.urls]

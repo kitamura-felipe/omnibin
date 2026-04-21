@@ -8,7 +8,9 @@ from omnibin import (
     generate_binary_classification_report, ColorScheme,
     generate_regression_report, RegressionColorScheme,
     generate_segmentation_report, SegmentationColorScheme,
-    generate_detection_report, DetectionColorScheme
+    generate_detection_report, DetectionColorScheme,
+    generate_text_generation_report, TextGenColorScheme,
+    LLMConfig, SUPPORTED_PROVIDERS,
 )
 
 # Define directories
@@ -38,6 +40,12 @@ DETECTION_COLOR_SCHEME_MAP = {
     "DEFAULT": DetectionColorScheme.DEFAULT,
     "MONOCHROME": DetectionColorScheme.MONOCHROME,
     "VIBRANT": DetectionColorScheme.VIBRANT
+}
+
+TEXT_GEN_COLOR_SCHEME_MAP = {
+    "DEFAULT": TextGenColorScheme.DEFAULT,
+    "MONOCHROME": TextGenColorScheme.MONOCHROME,
+    "VIBRANT": TextGenColorScheme.VIBRANT
 }
 
 
@@ -181,6 +189,85 @@ def process_detection_json(json_file, n_bootstrap=500, dpi=72, color_scheme="DEF
     ]
 
     return report_path, *plot_paths
+
+
+def process_text_generation_csv(
+    csv_file,
+    metrics_selection,
+    provider,
+    model_name,
+    api_key,
+    n_bootstrap=500,
+    dpi=72,
+    color_scheme="DEFAULT",
+):
+    """Process text generation (radiology reports) data."""
+    color_scheme_enum = TEXT_GEN_COLOR_SCHEME_MAP[color_scheme]
+
+    df = pd.read_csv(csv_file.name)
+    required_columns = ["reference", "candidate"]
+    if not all(col in df.columns for col in required_columns):
+        raise ValueError("CSV file must contain 'reference' and 'candidate' columns")
+
+    # Normalize metric selection (Gradio returns list of strings).
+    selected = [m.lower() for m in (metrics_selection or [])]
+
+    # Build LLM config only if a judge metric needing one is selected.
+    llm_config = None
+    judge_needing_llm = {"green", "radfact", "crimson"}
+    if selected and any(m in judge_needing_llm for m in selected):
+        if not provider:
+            raise ValueError(
+                "Provider must be selected when using GREEN / RadFact / CRIMSON."
+            )
+        if not api_key:
+            raise ValueError(
+                f"API key is required for provider '{provider}'."
+            )
+        llm_config = LLMConfig(
+            provider=provider,
+            model=model_name or None,
+            api_key=api_key,
+        )
+
+    clean_results_dir()
+
+    report = generate_text_generation_report(
+        references=df["reference"].astype(str).tolist(),
+        candidates=df["candidate"].astype(str).tolist(),
+        output_path=os.path.join(RESULTS_DIR, "text_generation_report.pdf"),
+        metrics=selected,
+        llm_config=llm_config,
+        n_bootstrap=n_bootstrap,
+        random_seed=42,
+        dpi=dpi,
+        color_scheme=color_scheme_enum,
+    )
+
+    plots_dir = os.path.join(RESULTS_DIR, "plots")
+    summary_plot = os.path.join(plots_dir, "text_gen_metrics_summary.png")
+    distribution_plot = os.path.join(plots_dir, "text_gen_per_sample_distribution.png")
+    correlation_plot = os.path.join(plots_dir, "text_gen_metric_correlation.png")
+    heatmap_plot = os.path.join(plots_dir, "text_gen_per_sample_heatmap.png")
+
+    # Format score tables for display.
+    agg_rows = [[k, f"{v:.4f}"] for k, v in report.aggregate_scores.items()]
+    sub_rows = [[k, f"{v:.4f}"] for k, v in report.submetrics.items()]
+    skip_text = ""
+    if report.metrics_skipped:
+        lines = [f"- **{k}**: {v}" for k, v in report.metrics_skipped.items()]
+        skip_text = "### Skipped metrics\n" + "\n".join(lines)
+
+    return (
+        report.output_path,
+        summary_plot if os.path.exists(summary_plot) else None,
+        distribution_plot if os.path.exists(distribution_plot) else None,
+        correlation_plot if os.path.exists(correlation_plot) else None,
+        heatmap_plot if os.path.exists(heatmap_plot) else None,
+        agg_rows,
+        sub_rows,
+        skip_text,
+    )
 
 
 # Create tabs for different report types
@@ -348,8 +435,111 @@ with gr.Blocks(title="Omnibin - ML Metrics Report Generator") as app:
                 outputs=[det_pdf, det_pr, det_froc, det_iou, det_conf, det_summary]
             )
 
+        # Text Generation Tab (radiology reports)
+        with gr.TabItem("Text Generation"):
+            gr.Markdown("### Text Generation Report (Radiology Reports)")
+            gr.Markdown(
+                "Upload a CSV with `reference` and `candidate` columns. "
+                "Lexical metrics (BLEU / ROUGE / METEOR / BERTScore) run locally. "
+                "LLM-judge metrics (GREEN, RadFact, CRIMSON) require an API key.\n\n"
+                "**Paper-default judge models:** GREEN → `StanfordAIMI/GREEN-RadLlama2-7b` "
+                "(Ostmeier et al., 2024); RadFact → Llama-3-70B-Instruct "
+                "(Bannur et al., 2024); CRIMSON → `MedGemmaCRIMSON-4B` "
+                "(Baharoon et al., 2026)."
+            )
+            gr.Markdown(
+                "> ⚠️ **DISCLAIMER — API-mode judges are not paper defaults.**  \n"
+                "> The hosted Space runs GREEN and RadFact in **API mode**: we use "
+                "each paper's verbatim prompt (GREEN) or system messages (RadFact) "
+                "but route them to a generic provider you select (OpenAI / Anthropic "
+                "/ Google / OpenRouter / Groq). **Scores can differ from published "
+                "numbers**, because the original papers fine-tuned their own judge "
+                "models.  \n"
+                "> - **GREEN API mode**: verbatim prompt + parser, only the judge "
+                "model changes.  \n"
+                "> - **RadFact API mode**: verbatim two-stage system prompts but "
+                "with zero-shot JSON output (the upstream `radfact` package teaches "
+                "output format with 10-shot YAML). Only logical precision/recall/F1; "
+                "no grounding or spatial scores.  \n"
+                "> For exact paper reproduction: `pip install omnibin[green]` "
+                "(needs GPU) or `pip install omnibin[radfact]` (needs a separate "
+                "env due to pydantic 1.x / Gradio conflict)."
+            )
+
+            with gr.Row():
+                with gr.Column():
+                    gr.Markdown("**Download example file to try:**")
+                    gr.File(
+                        value=os.path.join(EXAMPLES_DIR, "text_generation_example.csv"),
+                        label="Example: text_generation_example.csv (10 fabricated CXR pairs)",
+                        interactive=False
+                    )
+                    gr.Markdown("---")
+                    tg_csv = gr.File(label="Upload CSV")
+                    tg_metrics = gr.CheckboxGroup(
+                        label="Metrics",
+                        choices=[
+                            "bleu", "rouge", "meteor", "bertscore",
+                            "green", "radfact", "crimson",
+                        ],
+                        value=["bleu", "rouge", "meteor", "bertscore"],
+                        info=(
+                            "Pick which metrics to compute. GREEN / RadFact / CRIMSON "
+                            "require an API key — they run in API mode with your "
+                            "chosen provider (see disclaimer above)."
+                        ),
+                    )
+                    tg_provider = gr.Dropdown(
+                        label="LLM Provider (for GREEN / RadFact / CRIMSON)",
+                        choices=list(SUPPORTED_PROVIDERS),
+                        value="openai",
+                    )
+                    tg_model = gr.Textbox(
+                        label="Model Name (optional — defaults per provider)",
+                        placeholder="e.g. gpt-4o, claude-sonnet-4-6, gemini-2.5-pro",
+                    )
+                    tg_api_key = gr.Textbox(
+                        label="API Key",
+                        type="password",
+                        placeholder="sk-...",
+                    )
+                    tg_bootstrap = gr.Number(label="Bootstrap Iterations", value=500, minimum=50, maximum=5000)
+                    tg_dpi = gr.Number(label="DPI", value=72, minimum=50, maximum=300)
+                    tg_color = gr.Dropdown(label="Color Scheme", choices=["DEFAULT", "MONOCHROME", "VIBRANT"], value="DEFAULT")
+                    tg_btn = gr.Button("Generate Report", variant="primary")
+
+                with gr.Column():
+                    tg_pdf = gr.File(label="Report PDF")
+                    tg_summary = gr.Image(label="Metrics Summary")
+                    tg_dist = gr.Image(label="Per-sample Distribution")
+                    tg_corr = gr.Image(label="Metric Correlation")
+                    tg_heatmap = gr.Image(label="Per-sample Heatmap")
+                    tg_agg_table = gr.Dataframe(
+                        headers=["Metric", "Aggregate"],
+                        label="Aggregate Scores",
+                        interactive=False,
+                    )
+                    tg_sub_table = gr.Dataframe(
+                        headers=["Submetric", "Value"],
+                        label="Submetric Breakdown",
+                        interactive=False,
+                    )
+                    tg_skipped = gr.Markdown()
+
+            tg_btn.click(
+                process_text_generation_csv,
+                inputs=[
+                    tg_csv, tg_metrics, tg_provider, tg_model, tg_api_key,
+                    tg_bootstrap, tg_dpi, tg_color,
+                ],
+                outputs=[
+                    tg_pdf, tg_summary, tg_dist, tg_corr, tg_heatmap,
+                    tg_agg_table, tg_sub_table, tg_skipped,
+                ],
+            )
+
     gr.Markdown("---")
-    gr.Markdown("**Omnibin v0.2.0** - Comprehensive ML evaluation metrics with healthcare focus")
+    gr.Markdown("**Omnibin v0.3.0** - Comprehensive ML evaluation metrics with healthcare focus")
 
 if __name__ == "__main__":
     app.launch()
