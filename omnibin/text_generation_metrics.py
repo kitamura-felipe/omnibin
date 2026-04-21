@@ -192,12 +192,14 @@ def generate_text_generation_report(
         try:
             from .judge_metrics.crimson import compute_crimson
             res = compute_crimson(refs, cands, llm_config=llm_config)
-            aggregate_scores["CRIMSON"] = res.aggregate
+            label = "CRIMSON (API mode)" if res.api_mode else "CRIMSON"
+            aggregate_scores[label] = res.aggregate
             submetrics.update(res.submetrics)
-            per_sample_scores["CRIMSON"] = res.per_sample
-            confidence_intervals["CRIMSON"] = bootstrap_mean_ci(
-                res.per_sample, n_boot=n_bootstrap,
-            )
+            if res.per_sample:
+                per_sample_scores[label] = res.per_sample
+                confidence_intervals[label] = bootstrap_mean_ci(
+                    res.per_sample, n_boot=n_bootstrap,
+                )
         except Exception as e:
             metrics_skipped["crimson"] = f"{type(e).__name__}: {e}"
 

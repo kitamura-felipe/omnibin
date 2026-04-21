@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-04-21
+
+### Added
+- **CRIMSON API mode** — vendored `CRIMSON/prompt_parts.py`,
+  `CRIMSON/utils.py`, and `CRIMSONScore._calculate_crimson` from
+  rajpurkarlab/CRIMSON (MIT) under `omnibin/judge_metrics/_crimson_vendor/`,
+  so CRIMSON runs against any of the 5 supported providers without
+  needing the upstream `crimson-score` package. Unblocks CRIMSON on the
+  Gradio Space (the official package pins `pandas>=3.0.1`, conflicts
+  with Gradio 5's `pandas<3.0` — tracked upstream as
+  [rajpurkarlab/CRIMSON#3](https://github.com/rajpurkarlab/CRIMSON/issues/3)).
+- 4 new tests (51 total): vendored score formula sanity checks plus
+  end-to-end CRIMSON API-mode exercises with mocked `litellm.completion`.
+
+### Changed
+- Gradio Text Generation tab now lets users select CRIMSON and run it
+  via the chosen provider; disclaimer updated accordingly and now links
+  to the upstream issue about the pandas pin.
+- `omnibin.judge_metrics.CRIMSONResult` gains an `api_mode: bool` flag
+  (mirrors GREEN/RadFact) so downstream reports can label results
+  `"CRIMSON"` vs `"CRIMSON (API mode)"`.
+
 ## [0.3.0] - 2026-04-21
 
 ### Added

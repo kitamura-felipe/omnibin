@@ -242,14 +242,20 @@ Each metric has two modes:
 - **Paper-default mode** — uses the upstream package verbatim (GREEN's
   local Llama-2 fine-tune, RadFact's hydra pipeline, CRIMSON's MedGemma).
   Requires the extras install; GREEN/CRIMSON need a GPU.
-- **API mode** — replays each paper's prompts against any of 5 providers
-  (**OpenAI, Anthropic, Google Gemini, OpenRouter, Groq**). GREEN uses its
-  verbatim prompt and parser unchanged (only the judge model swaps).
-  RadFact uses its verbatim two-stage system prompts but with zero-shot
-  JSON output instead of the upstream 10-shot YAML — logical P/R/F1 only,
-  no grounding / spatial. **Scores in API mode may differ from published
-  paper numbers**; reserved for screening / demo use. For exact paper
-  reproduction use the extras install.
+- **API mode** — replays each paper's pipeline against any of 5 providers
+  (**OpenAI, Anthropic, Google Gemini, OpenRouter, Groq**):
+  - **GREEN** — verbatim prompt + parser (Apache-2.0); only the judge
+    model swaps.
+  - **RadFact** — verbatim two-stage system prompts but with zero-shot
+    JSON output instead of the upstream 10-shot YAML. Logical P/R/F1 only,
+    no grounding / spatial.
+  - **CRIMSON** — verbatim prompt + JSON parser + scoring formula (MIT,
+    vendored in `omnibin/judge_metrics/_crimson_vendor/`); only the judge
+    model swaps.
+
+  **Scores in API mode may differ from published paper numbers** — reserve
+  for screening / demo use. For exact paper reproduction use the extras
+  install.
 
 ```python
 from omnibin import (

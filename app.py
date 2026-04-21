@@ -461,13 +461,17 @@ with gr.Blocks(title="Omnibin - ML Metrics Report Generator") as app:
                 "with zero-shot JSON output (the upstream `radfact` package teaches "
                 "output format with 10-shot YAML). Only logical precision/recall/F1; "
                 "no grounding or spatial scores.  \n"
-                "> - **CRIMSON is not available on this Space** — the official "
-                "`crimson-score` package currently pins `pandas>=3.0.1`, which "
-                "conflicts with Gradio 5's `pandas<3.0`. Run `pip install "
-                "omnibin[crimson]` locally to use it.  \n"
+                "> - **CRIMSON API mode**: verbatim prompt + JSON parser + "
+                "scoring formula (vendored from rajpurkarlab/CRIMSON), only "
+                "the judge model changes. We use API mode on this Space "
+                "because `crimson-score` pins `pandas>=3.0.1` (conflicts "
+                "with Gradio's `pandas<3.0`); tracked upstream as "
+                "[rajpurkarlab/CRIMSON#3](https://github.com/rajpurkarlab/CRIMSON/issues/3).  \n"
                 "> For exact paper reproduction: `pip install omnibin[green]` "
-                "(needs GPU) or `pip install omnibin[radfact]` (needs a separate "
-                "env due to pydantic 1.x / Gradio conflict)."
+                "(needs GPU), `pip install omnibin[radfact]` (needs a separate "
+                "env due to pydantic 1.x / Gradio conflict), or "
+                "`pip install omnibin[crimson]` (separate env until the "
+                "pandas pin is relaxed)."
             )
 
             with gr.Row():
@@ -543,7 +547,7 @@ with gr.Blocks(title="Omnibin - ML Metrics Report Generator") as app:
             )
 
     gr.Markdown("---")
-    gr.Markdown("**Omnibin v0.3.0** - Comprehensive ML evaluation metrics with healthcare focus")
+    gr.Markdown("**Omnibin v0.3.1** - Comprehensive ML evaluation metrics with healthcare focus")
 
 if __name__ == "__main__":
     app.launch()

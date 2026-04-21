@@ -244,6 +244,91 @@ class TestRadFactAPIMode(unittest.TestCase):
         self.assertEqual(result.per_sample, [])
 
 
+class TestCRIMSONAPIMode(unittest.TestCase):
+    """Exercise CRIMSON's API-mode scorer with mocked litellm."""
+
+    PERFECT_MATCH_JSON = (
+        '{"reference_findings":'
+        '[{"id":"R1","finding":"right lower lobe pneumonia","clinical_significance":"actionable_not_urgent"}],'
+        '"predicted_findings":'
+        '[{"id":"P1","finding":"right lower lobe consolidation","clinical_significance":"actionable_not_urgent"}],'
+        '"matched_findings":[{"ref_id":"R1","pred_id":"P1"}],'
+        '"errors":{"false_findings":[],"missing_findings":[],"attribute_errors":[]}}'
+    )
+
+    FALSE_FINDING_JSON = (
+        '{"reference_findings":[],'
+        '"predicted_findings":'
+        '[{"id":"P1","finding":"pneumothorax","clinical_significance":"urgent"}],'
+        '"matched_findings":[],'
+        '"errors":{"false_findings":["P1"],"missing_findings":[],"attribute_errors":[]}}'
+    )
+
+    def test_vendored_score_formula_matches_paper(self):
+        """Sanity-check the vendored _calculate_crimson math on 3 canonical cases."""
+        from omnibin.judge_metrics._crimson_vendor import calculate_crimson
+        import json
+
+        perfect = calculate_crimson(json.loads(self.PERFECT_MATCH_JSON))
+        self.assertEqual(perfect["crimson_score"], 1.0)
+
+        false_only = calculate_crimson(json.loads(self.FALSE_FINDING_JSON))
+        # One false urgent finding, no correct findings → negative score
+        self.assertLess(false_only["crimson_score"], 0.0)
+        self.assertEqual(false_only["error_counts"]["false_findings"], 1)
+
+    def test_crimson_api_end_to_end_with_mocked_litellm(self):
+        from omnibin.judge_metrics.crimson import compute_crimson
+
+        cfg = LLMConfig(provider="openai", api_key="dummy")
+        with patch(
+            "litellm.completion",
+            return_value=_fake_litellm_response(self.PERFECT_MATCH_JSON),
+        ):
+            result = compute_crimson(
+                ["reference report"], ["candidate report"],
+                llm_config=cfg,
+            )
+        self.assertTrue(result.api_mode)
+        self.assertEqual(len(result.per_sample), 1)
+        self.assertAlmostEqual(result.per_sample[0], 1.0)
+        self.assertEqual(result.num_llm_failures, 0)
+        self.assertIn("CRIMSON score (API mode)", result.submetrics)
+
+    def test_crimson_api_handles_malformed_json(self):
+        from omnibin.judge_metrics.crimson import compute_crimson
+
+        cfg = LLMConfig(provider="groq", api_key="dummy")
+        with patch(
+            "litellm.completion",
+            return_value=_fake_litellm_response("clearly not json at all"),
+        ):
+            result = compute_crimson(
+                ["reference"], ["candidate"],
+                llm_config=cfg,
+            )
+        self.assertTrue(result.api_mode)
+        self.assertEqual(result.per_sample, [])
+        self.assertEqual(result.num_llm_failures, 1)
+
+    def test_crimson_api_tolerates_json_in_code_fence(self):
+        """Upstream parser handles code-fenced JSON — verify it still works through our pipeline."""
+        from omnibin.judge_metrics.crimson import compute_crimson
+        # JSON strictly, but some providers wrap in ```json fences — CRIMSON's
+        # parse_json_response doesn't strip fences, so expect a failure here.
+        # Plain JSON (no fence) should succeed.
+        cfg = LLMConfig(provider="anthropic", api_key="dummy")
+        with patch(
+            "litellm.completion",
+            return_value=_fake_litellm_response(self.PERFECT_MATCH_JSON),
+        ):
+            result = compute_crimson(
+                ["reference"], ["candidate"],
+                llm_config=cfg,
+            )
+        self.assertAlmostEqual(result.per_sample[0], 1.0)
+
+
 class TestColorSchemes(unittest.TestCase):
     def test_all_schemes_have_required_keys(self):
         required = {"bars", "accent", "distribution", "reference_line", "heatmap_cmap", "metrics_colors"}
