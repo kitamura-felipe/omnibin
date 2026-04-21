@@ -14,8 +14,9 @@ rouge-score>=0.1.2
 nltk>=3.8.1
 bert-score>=0.3.13
 
-# LLM-judge provider router + CRIMSON
-# (GREEN and RadFact are deliberately omitted: GREEN needs GPU with pinned torch 2.2.2,
-# and RadFact pins pydantic 1.x which conflicts with Gradio >=5.)
+# LLM-judge provider router
+# (GREEN and RadFact run in API mode on the Space — they don't need the
+# upstream packages here. CRIMSON is deliberately omitted: crimson-score
+# pins pandas>=3.0.1 which conflicts with Gradio's pandas<3.0. Install
+# `omnibin[crimson]` locally to use CRIMSON's official package.)
 litellm>=1.40.0
-crimson-score>=0.2.0
