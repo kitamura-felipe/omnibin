@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibin"
-version = "0.3.0"
+version = "0.3.1"
 description = "A comprehensive package for generating ML evaluation reports with visualizations and confidence intervals - supports classification, regression, segmentation, detection, and text generation with healthcare focus"
 readme = "README.md"
 requires-python = ">=3.11"

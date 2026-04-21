@@ -3,15 +3,18 @@ CRIMSON — Clinically-grounded LLM-based metric for radiology reports.
 reference: rajpurkarlab/CRIMSON — https://github.com/rajpurkarlab/CRIMSON
 paper: Baharoon et al., "CRIMSON", 2026.
 
-The upstream package exposes two backends:
-  - api="huggingface"  → their fine-tuned MedGemmaCRIMSON 4B (paper default)
-  - api="openai"       → any OpenAI-compatible endpoint via model_name + base_url
-
-For Anthropic/Gemini/Groq/OpenRouter we route through `api="openai"` and set
-the OpenAI-compatible base URL for each provider.
-
-Install:
-    pip install omnibin[crimson]    # adds crimson-score
+Two modes:
+  - **Paper default** (no llm_config given): the upstream ``crimson-score``
+    package, which can target either its fine-tuned MedGemmaCRIMSON-4B
+    (``api="huggingface"``) or any OpenAI-compatible endpoint
+    (``api="openai"``). Install:
+        pip install omnibin[crimson]
+    Note: as of crimson-score 0.2.0 the package pins ``pandas>=3.0.1``,
+    which conflicts with Gradio 5.x — install in a separate env from the
+    Gradio app. (Tracked upstream: rajpurkarlab/CRIMSON#3.)
+  - **API mode** (llm_config given): replays CRIMSON's verbatim prompt +
+    parser + score-calculation via our 5-provider router, bypassing the
+    upstream package entirely. See ``_crimson_api.py``.
 """
 from __future__ import annotations
 
@@ -21,7 +24,6 @@ from typing import Optional
 from ..llm_provider import LLMConfig
 
 
-# Paper default is the fine-tuned MedGemmaCRIMSON served locally via HF.
 CRIMSON_PAPER_DEFAULT_MODEL = "huggingface:MedGemmaCRIMSON"
 
 
@@ -31,6 +33,8 @@ class CRIMSONResult:
     aggregate: float
     submetrics: dict[str, float] = field(default_factory=dict)
     raw_per_sample: list[dict] = field(default_factory=list)
+    num_llm_failures: int = 0
+    api_mode: bool = False
 
 
 def compute_crimson(
@@ -39,22 +43,24 @@ def compute_crimson(
     llm_config: Optional[LLMConfig] = None,
 ) -> CRIMSONResult:
     """
-    Compute CRIMSON scores using the official crimson-score package.
+    Compute CRIMSON scores.
 
-    If `llm_config` is None, CRIMSON's default HuggingFace backend
-    (MedGemmaCRIMSON-4B) is used — matches the paper but needs a GPU.
-    If `llm_config` is provided, the OpenAI-compatible backend is used
-    with the selected provider's base URL + API key.
-
-    Returns
-    -------
-    CRIMSONResult
-        - per_sample: list of crimson_score floats (range -1..1)
-        - aggregate: mean crimson_score
-        - submetrics: mean of each error category (false findings, missing
-          findings, attribute errors)
-        - raw_per_sample: the full upstream dicts for debugging
+    If ``llm_config`` is given, runs API mode (vendored verbatim prompt +
+    parser + score) against the selected provider. Otherwise delegates to
+    the official ``crimson-score`` package.
     """
+    if llm_config is not None:
+        from ._crimson_api import compute_crimson_via_api
+        res = compute_crimson_via_api(references, candidates, llm_config)
+        return CRIMSONResult(
+            per_sample=res["per_sample"],
+            aggregate=res["aggregate"],
+            submetrics=res["submetrics"],
+            raw_per_sample=res["raw_per_sample"],
+            num_llm_failures=res["num_llm_failures"],
+            api_mode=True,
+        )
+
     try:
         from CRIMSON import CRIMSONScore
     except ImportError as e:
@@ -62,19 +68,11 @@ def compute_crimson(
             "CRIMSON requires the official package. Install with:\n"
             "    pip install omnibin[crimson]\n"
             "or:\n"
-            "    pip install crimson-score"
+            "    pip install crimson-score\n"
+            "Alternative: pass `llm_config=LLMConfig(provider=..., ...)` to run in API mode."
         ) from e
 
-    if llm_config is None:
-        scorer = CRIMSONScore(api="huggingface", model_name=None)
-    else:
-        api_key = llm_config.require_api_key()
-        import os
-        os.environ["OPENAI_API_KEY"] = api_key
-        if llm_config.base_url:
-            os.environ["OPENAI_BASE_URL"] = llm_config.base_url
-            os.environ["OPENAI_API_BASE"] = llm_config.base_url
-        scorer = CRIMSONScore(api="openai", model_name=llm_config.model)
+    scorer = CRIMSONScore(api="huggingface", model_name=None)
 
     scores: list[float] = []
     false_findings: list[int] = []
@@ -108,4 +106,6 @@ def compute_crimson(
         aggregate=aggregate,
         submetrics=submetrics,
         raw_per_sample=raw,
+        num_llm_failures=0,
+        api_mode=False,
     )

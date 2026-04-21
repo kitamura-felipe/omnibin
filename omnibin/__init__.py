@@ -28,7 +28,7 @@ from .text_generation_metrics import (
 from .text_generation_utils import TextGenColorScheme
 from .llm_provider import LLMConfig, LLMProvider, SUPPORTED_PROVIDERS
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     # Binary Classification
